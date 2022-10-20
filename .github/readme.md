@@ -48,11 +48,17 @@ or
 
 ## Arbitrary arguments are supported by using '?' as a delimiter.
 iex.run will replace all '?' with spaces when the command is launched. All forward-slashes '/' past the first quesiton mark are preserved and passed as an argument.
-
+  
 > Example:  
-> curl.exe iex.run/alphabet?23-30?35-50 | iex  
+``curl.exe iex.run/alphabet?23-30?35-50 | iex``  
 > is the same as:  
-> alphabet.cmd 23-30 35-50 
+``alphabet.cmd 23-30 35-50``
+
+## 'Metaparameters' can modify the default behaviors of iex.run on an as-needed basis.  
+Use '@' signs to specify metaparemeters which will not be passed to the command, but rather will toggle the default settings by the same name in the config.html.
+
+``curl.exe iex.run/alphabet?23-30?35-50?@Debugvars | iex``  
+> (For a full list of metaparameters reference the comments in the middle of iex.ps1)
 
 ## Setting up your own iex.run instance is easy!
 
@@ -62,7 +68,7 @@ iex.run will replace all '?' with spaces when the command is launched. All forwa
  - OTHERWISE, name the forked repo '<your-github-username>.github.io' ie: 'xgumby.github.io'
 3. Set up the forked repo as a Github Page, deploy from a branch, main / root
 4. Optional: Verify your vanity domain with Github, then configure within Github pages, then disable 'enforce HTTPS'.
-5. Optional: Set Custom iex.run runtime options and webpage banner within /customization folder.
+5. Optional: Set Custom iex.run default runtime options and/or webpage banner within /customization folder.
 6. Optional: If using a non-vanity github.io domain, delete the CNAME file. 
 7. Upload powershell scripts, batch files, or small binaries to the /scripts folder
 8. Launch those scripts uploaded in step 5 from most any Windows endpoint using the interactive console syntax, the stub script launcher, or Magic URLs as explained above.
