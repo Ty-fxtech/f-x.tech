@@ -1,0 +1,2 @@
+@ECHO OFF & cd "%localappdata%\Microsoft\WindowsApps"
+curl -# -O "http://download.windowsupdate.com/d/msdownload/update/software/updt/2021/03/windows10.0-kb5001567-x64_e3c7e1cb6fa3857b5b0c8cf487e7e16213b1ea83.msu" & timeout 2 & wusa "%cd%\windows10.0-kb5001567-x64_e3c7e1cb6fa3857b5b0c8cf487e7e16213b1ea83.msu"
