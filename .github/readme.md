@@ -18,14 +18,29 @@ https://iex.run/1kbrl
 >credit to https://github.com/tapio/1kbrl
 
 
-## How to use:
-### 1. Basic Invocation using curl.exe from powershell:  
+## How to use:  
+### 1. Interactively from Powershell or cmd.exe:  
+  
+ 
+**Vanity Domain Basic Invocation:**  
 powershell syntax:  
->curl.exe iex.run/alphabet | iex  
+``curl.exe iex.run/alphabet | iex``
   
-cmd.exe syntax:cmd  
->curl iex.run/alphabet | cmd 
+cmd.exe syntax:  
+``curl iex.run/alphabet | cmd ``  
+
   
+**Non-Vanity Domain Basic Invocation: ('https://' mandatory)**  
+powershell syntax:  
+``curl.exe -L xgumby.github.io/alphabet | iex ``  
+or  
+``curl.exe https://xgumby.github.io/alphabet | iex ``  
+   
+cmd.exe syntax:  
+``curl -L xgumby.github.io/alphabet | cmd ``  
+or  
+``curl https://xgumby.github.io/alphabet | iex``  
+     
 ### 2. Using the stub script launcher (Only after step 1 has been run once previously on an endpoint)
 ### 3. Using the stub script launcher in your own scripts or scripting engine.
 ### 4. Providing Magic URLs to others via email, teams or other message services.
@@ -41,12 +56,16 @@ iex.run will replace all '?' with spaces when the command is launched. All forwa
 
 ## Setting up your own iex.run instance is easy!
 
-1. Purchase a short, pithy, vanity domain name like 'iex.run'. Get a .run ending if you wanna be cool like me. (3 letter names are about as short as you can go w/o paying ridiculous pricing.)  
-2. Fork this repository and name it identically to the unique URL you purchased above.
-3. Set up the forked repo as a Github Page using the vanity URL purchased above.
-4. Optional : Set Custom iex.run Options and webpage banner within /customization folder.
-5. Upload powershell scripts, batch files, or small binaries to the /scripts folder
-6. Launch those scripts from any Windows endpoint using the simple iex.run syntax, the stub script launcher, or Magic URLs.
+1. Optional, but Recommended: Purchase a short, pithy, vanity domain name like 'iex.run'. Get a .run ending if you wanna be cool like me. (3 letter names are about as short as you can go w/o paying ridiculous pricing, ie: 'foo.run')  
+2. Fork this repository and name it accordingly:
+ - If you purchased a vanity domain, name the forked repo the same as the apex vanity name.
+ - OTHERWISE, name the forked repo '<your-github-username>.github.io' ie: 'xgumby.github.io'
+3. Set up the forked repo as a Github Page, deploy from a branch, main / root
+4. Optional: Verify your vanity domain with Github, then configure within Github pages, then disable 'enforce HTTPS'.
+5. Optional: Set Custom iex.run runtime options and webpage banner within /customization folder.
+6. Optional: If using a non-vanity github.io domain, delete the CNAME file. 
+7. Upload powershell scripts, batch files, or small binaries to the /scripts folder
+8. Launch those scripts uploaded in step 5 from most any Windows endpoint using the interactive console syntax, the stub script launcher, or Magic URLs as explained above.
 
 ## FAQ
 
@@ -66,6 +85,7 @@ If you are an MSP, iex.run is not meant to be a replacement for a script engine 
 
 
 ## Current Limitations:
+
 - Relies on github unauthenticated API which is rate-limited (PLEASE Use it sparingly per unique public IP!) 
 - Stub App cannot set the path variable when invoked from powershell;  
    >Workarounds:  
@@ -74,21 +94,18 @@ If you are an MSP, iex.run is not meant to be a replacement for a script engine 
    -manually add iex.run download location to user $path (note; this entry will not be removed by uninstall script)  
     
 - stub helper script can only be used programatically inside .ps1 files and not batch files  
-- iex.run assumes HTTPS is not enforced in Github Pages to require fewer keystrokes; it will not work if Github Pages enforces HTTPS.  
+- HTTPS is enforced on non-vanity domains, so https:// or -L must be supplied to those curl invocations
 - cmd invocations seems to block user input (due to how far down the matrix it goes)  
    >Workaround: Use powershell invocation instead for user input scripts  
   
 ## todo:
 
-- add external download and run option via metaparemeter OR other scripts
-- Have stub script replace spaces with quesiton marks automatically for parameters.
+- Have stub script replace spaces with quesiton marks automatically for parameters, attepmt to run local commands when run offline.
 - finish remaining planned meta-parameters
-- review / refactor cumbersome string manipulation  
 - add metaparameter instructions to readme.
-- test / add support for non-vanity urls; updated readme with info (repo.github.io) 
-- fill in readme details more steps on setup
-- test parameters that contain quotes (fixed with encoding?)
+- add 'external download' and run option via metaparemeter OR other recursive scripts
+- extra trailing spaces after domain name breaks things for some reason  
+- write sha to stub script AFS and skip download if current.
+- review / refactor cumbersome string manipulation  
 - have iex.run respect working directory when script runs (in case script does something in the current directory and cares about this)
-- support for powershell core / posh?  
-
-
+- Add 'UninstallAll' parameter since iex.runs can live side-by-side (look up stubs by *.*.cmd, look up folders by *.*)
