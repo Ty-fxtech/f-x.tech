@@ -11,13 +11,12 @@ $OldProgress = $ProgressPreference; $ProgressPreference = "SilentlyContinue"
 $_DownloadFolder = '$Env:Public\$github\' # Default '$Env:Public\$github\'
 
 # Get full github URLs
-
-# $github = $invocuri.host
 $search = irm  https://api.github.com/search/repositories?q=%22$github%22%20in%3Aname%20fork%3Atrue
 $githubURL = ($search.items | where {$_.name -like "$github"} | Select -First 1).html_url
 $command = ($invocuri.Absolutepath).Trim("/")
 $arguments = $invocuri.Query
 $arguments = [System.Web.HttpUtility]::UrlDecode($arguments)
+$command = [System.Web.HttpUtility]::UrlDecode($command)
 $arguments = $arguments.Split("?")
 
 # Make API calls and format.
@@ -29,20 +28,23 @@ $configapi = invoke-restmethod $configapiurl
 $list = foreach ($item in $api) {$item | Select -Property name, size, sha}
 $list | Add-Member -MemberType NoteProperty -Name '?' -Value ''
 
-### Config Examples:
+### Config Examples for reference only!:
  
-# These configs can be toggled via 'meta-parameters' in the URL query string, by prefacing with an @ instead of $. Defaults are always false.
+# These configs can be toggled via 'meta-parameters' in the URL query string, by prefacing with an @ and no underscore. Defaults are always false.
 
-# $_Admin                  Run script elevetated.
-# $_NoStub                 Do not download stub script; not implemented yet. 
-# $_NoWildcard              Do not match command on wildcard, not implemented yet.
-# $_NoExecute               Download Script only, not implemented yet.
-# $_HiddenWindow            hide powershell window, not implemented yet.
-# $_DebugVars             show all vars created
-# $_KeepVars 
-# $_cat                    prints script text only, does not download or execute
-# $_help                  same as cat except filters to line comments starting with #, : or REM
-# $_Uninstall              Run uninstall script after, not implemented yet.
+# $_NoStub                 #Do not download stub script
+# $_NoWildcard             #Do not match command on wildcard, n
+# $_NoExecute              #Download Script only.
+# $_NewWindow              #Runs in a new window. (not implemented yet)
+# $_Admin                  #Run script elevetated; implies NewWindow
+# $_Hidden                 #hide powershell window; also implies NewWindow
+# $_cat                    #prints script text only, does not download or execute
+# $_type                   #same as cat
+# $_help                   #same as cat except filters to line comments starting with ##, or ::, so you can add custom iex.run help reminders in the comments of your scripts.
+# $_NoClipboard            #Do not copy MagicURL to clipboard
+# $_DebugVars              #show all vars created
+# $_KeepVars               #do not delete any iex variables after script runs.
+# $_Uninstall              #Run uninstall script after everything else
 
 
 $ConfigUrl = ($configapi | Where-Object {$_.name -like "*config.html*"}).download_url
@@ -58,7 +60,7 @@ foreach ($item in $customconfig) {
  $thing = $item.split("=") 
  $thing1 = $thing[1]
   # Below allows for in-line comments in config file
- if ($thing1 -like "*#*") {$thing1 = $thing1.substring(0, $thing1.LastIndexOf("#"))}
+ if ($thing1 -like "*#*") {$thing1 = $thing1.substring(0, $thing1.IndexOf("#"))}
  $thing1 = $thing1.trim(" ")
  if ($thing1 -match "^\d+$") {
    $thing1 = $thing1 -as [int] 
@@ -82,6 +84,7 @@ foreach ($item in $arguments) {
       } 
      } 
 
+
 # Expand DownloadFolder
 $_DownloadFolder = $ExecutionContext.InvokeCommand.ExpandString($_DownloadFolder)
 
@@ -91,15 +94,33 @@ set-executionpolicy -force -scope process bypass
 
 if (!(Test-Path $_DownloadFolder)) {New-Item -Path $_DownloadFolder -ItemType Directory > $null} # redirect to $null is needed as New-Item -Directory outputs dir aftewards for some reason.
 $env:Path += ";$_DownloadFolder;"
-echo "@ECHO OFF`nset PATH=%PATH%;$_DownloadFolder; `npowershell -c `"curl.exe -L \`"%~n0/%1\`" | iex`" || powershell -c `"& %1`" || dir /b $_DownloadFolder" | out-file $Env:localappdata\Microsoft\WindowsApps\$github.cmd -encoding ascii
+
+# Write Stub Script to file:
+
+if (!($_NoStub)) {
+$stub = @"
+@ECHO OFF
+set "PATH=%PATH%;$_DownloadFolder;"
+if [%~1] NEQ [] SET "PARAM=%*"  
+IF DEFINED PARAM SET "PARAM=%PARAM: =?%" 
+powershell -c "curl.exe -L $github/%PARAM% | iex" || powershell -c "& %PARAM%" > NUL || (ECHO You seem to be offline, see previously downloaded %~n0 files below: & ECHO. & dir /b "$_DownloadFolder")
+"@ 
+$stub | out-file $Env:localappdata\Microsoft\WindowsApps\$github.cmd -encoding ascii
+}
 
 write-host ""
 
 if ($command) {
- $DownloadUrl = ($api | Where-Object {$_.name -like "*$command*"}).download_url
- $DownloadUrlName = ($api | Where-Object {$_.name -like "*$command*"}).name
- $sha = ($api | Where-Object {$_.name -like "*$command*"}).sha
- }
+ if (!($_NoWildcard)) {
+  $DownloadUrl = ($api | Where-Object {$_.name -like "*$command*"}).download_url
+  $DownloadUrlName = ($api | Where-Object {$_.name -like "*$command*"}).name
+  $sha = ($api | Where-Object {$_.name -like "*$command*"}).sha
+ } else {
+  $DownloadUrl = ($api | Where-Object {$_.name -like "$command.*"}).download_url
+  $DownloadUrlName = ($api | Where-Object {$_.name -like "$command.*"}).name
+  $sha = ($api | Where-Object {$_.name -like "$command.*"}).sha
+  }
+}
 
 if ($DownloadUrl) {
   if ($DownloadUrl.gettype().Name -eq "String") {
@@ -121,21 +142,44 @@ $files = @(Get-ChildItem *)
 $files | Add-Member -MemberType NoteProperty -Name 'sha' -value '' 
 foreach ($file in $files) {$file.sha = Get-Content -Path $file.name -Stream sha -ErrorAction SilentlyContinue}
 
+# Download and Run Files
+
 if ($exe) {
-  if ($sha -in $files.sha) {
-    Write-Host "Downloaded '$exe' up-to-date, skipping download." -ForegroundColor Yellow; write-host "" 
+  if ($_cat -or $_type) {
+   write-host "$exe `n"  -foregroundcolor white
+   curl.exe -s $DownloadUrl | write-host -foregroundcolor white
+   write-host ""
+  } elseif ($_help) {
+   write-host "Help for $exe `n"  -foregroundcolor white
+   curl.exe -s $DownloadUrl | select-string -pattern "^##" | write-host -foregroundcolor white 
+   curl.exe -s $DownloadUrl | select-string -pattern "^::" | write-host -foregroundcolor white 
+   write-host ""
   } else {
-    Write-Host "Downloading '$exe' to '$_DownloadFolder'" -ForegroundColor Yellow; write-host ""
-    curl.exe -# -O $DownloadUrl
-    write-host "" 
-    if (Test-Path -Path $exe -PathType Leaf) {Set-Content -Path $exe -Stream sha -value $sha} 
+   if ($sha -in $files.sha) {
+     Write-Host "Downloaded '$exe' up-to-date, skipping download." -ForegroundColor Yellow; write-host "" 
+   } else {
+     Write-Host "Downloading '$exe' to '$_DownloadFolder'" -ForegroundColor Yellow; write-host ""
+     curl.exe -# -O $DownloadUrl
+     write-host "" 
+     if (Test-Path -Path $exe -PathType Leaf) {Set-Content -Path $exe -Stream sha -value $sha} 
+     }
+  if (!($_NoExecute)) {   
+    Write-Host "Launching '$exe' ..." -ForegroundColor Yellow 
+    write-host ""
+    if ($_Admin -and $_Hidden) {
+     start-process -verb RunAs -wait powershell -ArgumentList "-WindowStyle Hidden -executionpolicy Bypass -command `"& $_DownloadFolder$exe $arguments`" "
+    } elseif ($_Admin) {
+     start-process -verb RunAs -wait powershell -ArgumentList "-executionpolicy Bypass -command `"& $_DownloadFolder$exe $arguments`" "
+    } elseif ($_Hidden) {
+    start-process -wait powershell -ArgumentList "-WindowStyle Hidden -executionpolicy Bypass -command `"& $_DownloadFolder$exe $arguments`" "
+    } elseif ($_NewWindow) {
+    start-process -wait powershell -ArgumentList "-command `"& $exe $arguments`" "
+    } else {
+    start-process -nonewwindow -wait powershell -ArgumentList "-command `"& $exe $arguments`" "
     }
- Write-Host "Launching '$exe' ..." -ForegroundColor Yellow 
- write-host ""
- if (!($_Admin)) {
-  start-process -nonewwindow -wait powershell -ArgumentList "-command `"& $exe $arguments`" "
- } else {
-  start-process -verb RunAs -wait powershell -ArgumentList "-executionpolicy Bypass -command `"& $_DownloadFolder$exe $arguments`" "
+  } else {
+  Write-Host "Skipping execution.`n" -ForegroundColor Yellow;
+  }
  }
 }
 
@@ -154,11 +198,16 @@ If (!($DownloadUrl)) {
  IF ($command) {
   Write-Host "No scripts matching '$command' found in $github, trying a built-in command`n" -ForegroundColor Yellow
   try {
-    if (!($_Admin)) {
-     start-process -nonewwindow -wait powershell -ArgumentList "-command `"$command $arguments`" "
-    }
-    else {
+    if ($_Admin -and $_Hidden) {
+     start-process -verb RunAs -wait powershell -ArgumentList "-WindowStyle Hidden -executionpolicy Bypass -command `"$command $arguments`" "
+    } elseif ($_Admin) {
      start-process -verb RunAs -wait powershell -ArgumentList "-executionpolicy Bypass -command `"$command $arguments`" "
+    } elseif ($_Hidden) {
+    start-process -wait powershell -ArgumentList "-WindowStyle Hidden -executionpolicy Bypass -command `"$command $arguments`" "
+    } elseif ($_NewWindow) {
+    start-process -wait powershell -ArgumentList "-command `"$command $arguments`" "
+    } else {
+    start-process -nonewwindow -wait powershell -ArgumentList "-command `"$command $arguments`" "
     }
    }
   catch { Write-Host "No built-in matches found, please double-check your spelling" -ForegroundColor Red }
@@ -176,10 +225,11 @@ popd
 
 if (!($error)) {Write-Host ("$exe $github Complete!").trim(" ") -ForegroundColor Green; Write-Host ""} else {Write-Host ("$github completed with errors. `n`n $error").trim(" ") -ForegroundColor Red}
 
-if ($exe -or $internal) {
+if (!($_NoClipboard))  {
+if ($exe -or $internal){
  Set-Clipboard ("https://" + $invoc)
- write-host "The following 'Magic URL' has been copied to your keyboard: https://$invoc" 
- }
+ write-host "The following 'Magic URL' has been copied to your keyboard: https://$invoc `n" 
+ }}
 
 if ($_DebugVars) {write-host ""; get-variable | where-object {(@("FormatEnumerationLimit", "MaximumAliasCount", "MaximumDriveCount", "MaximumErrorCount", "MaximumFunctionCount", "MaximumVariableCount", "PGHome", "PGSE", "PGUICulture", "PGVersionTable", "PROFILE", "PSSessionOption") -notcontains $_.name) -and (([psobject].Assembly.GetType('System.Management.Automation.SpecialVariables').GetFields('NonPublic,Static') | Where-Object FieldType -eq ([string]) | ForEach-Object GetValue $null)) -notcontains $_.name}}
 
@@ -195,4 +245,4 @@ if ($_Uninstall) {
 ### Cleanup:
 
 $ProgressPreference = $OldProgress
-if (!($_KeepVars)) {Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable}
+# if (!($_KeepVars)) {Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable}

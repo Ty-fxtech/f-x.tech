@@ -9,8 +9,9 @@
 $existingVariables = Get-Variable
 #
 ### Get powershell Invocation and string manipulates out parts we care about.
-# 
-$invoc = $myinvocation | Select MyCommand | Format-Table -hidetableheaders | Out-String
+#
+$invoc = $myinvocation
+$invoc = $invoc.MyCommand.ToString()
 $invoc = $invoc.split("`"")                               # Remove double quotes so you can include semicolons and such in the URL
 $invoc = [string]::join("",($invoc.Split("`n")))          # ^
 $invoc = $invoc -ireplace [regex]::Escape(" | iex"), ""   # Remove ' | iex', case insensitive
@@ -18,6 +19,7 @@ $curl = $invoc.SubString(0, $invoc.LastIndexOf(' '))      # Assuming the URL wil
 $invoc = $invoc.Replace($curl + " ","")                   # removes the curl.exe and it's parameters
 $invoc = $invoc -ireplace [regex]::Escape("http://"), ""  # gets rid of https:// if exists, case insensitive
 $invoc = $invoc -ireplace [regex]::Escape("https://"), "" # gets rid of http:// if exists, case insensitive
+# $invoc = $invoc.Replace('%20',"?")                        # Pre-decode URL-encoded spaces as ? to cheat around URI character limits
 $invocuri = [uri]("https://" + $invoc)                    # Adds back in https:// and casts to uri so we can manipulate out the queries (?) easily
 $github = $invocuri.host                                  # get the main part
 #

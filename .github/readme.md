@@ -11,30 +11,42 @@ iex.run can turn a Github Pages repository into an online script toolbox that yo
 It works by way of a polyglot 404.HTML page / Powershell script, alongside an optionally-downloaded helper 'stub script launcher' to reduce keystrokes even further (after the first initial invocation on an endpoint.)
 
 ## Test it now by visiting the 'Magic URL' below, and then follow the instructions to play a little game.  
-https://iex.run/1kbrl  
+https://iex.run/3kbrl  
   
 ### You can also launch it interactively in cmd.exe or powershell; try the following in a fresh cmd.exe terminal:  
 ``curl iex.run | cmd``   
-``iex.run 1kbrl``  
+``iex.run 3kbrl``  
    
->Both methods download and launch the 1kbrl.exe found in the /scripts folder above.   
+>Both methods download and launch the 3kbrl.bat found in the /scripts folder above.    
+>  
 >Use the WASD to move, try to pick up gold and extra fuel before your torch goes out.  
->credit to https://github.com/tapio/1kbrl
-
+>game inspired by https://github.com/tapio/1kbrl  
+  
 
 ## How to use:  
 ### 1. Interactively from Powershell or cmd.exe:  
-  
- 
+#### Syntax Chart
+powershell:
+```
+curl.exe iex.run/command?param1?param2?@Metaparam1@Metaparam2 | iex
+curl.exe -L xgumby.github.io/command?param1?param2?@Metaparam1@Metaparam2 | iex
+```
+cmd:
+```
+curl iex.run/command?parameter1?parameter2?@Metaparameter1@Metaparameter1 | cmd
+curl -L xgumby.github.io/command?parameter1?parameter2?@Metaparameter1@Metaparameter1 | cmd
+```
+>Note that the middle portion of the command is identical to it's magic URL, we suggest prepending https:// so most things will automtaically convert it to a hyperlink.
+#### Examples 
 **Vanity Domain Basic Invocation:**  
-powershell syntax:  
+powershell:  
 ``curl.exe iex.run/alphabet | iex``
   
-cmd.exe syntax:  
+cmd.exe:  
 ``curl iex.run/alphabet | cmd ``  
 
   
-**Non-Vanity Domain Basic Invocation: ('https://' mandatory)**  
+**Non-Vanity Domain Basic Invocation: ('https://' or -L mandatory)**  
 powershell syntax:  
 ``curl.exe -L xgumby.github.io/alphabet | iex ``  
 or  
@@ -46,9 +58,23 @@ or
 ``curl https://xgumby.github.io/alphabet | iex``  
      
 ### 2. Using the stub script launcher (Only after step 1 has been run once previously on an endpoint)
+``` iex.run alphabet ```
 ### 3. Using the stub script launcher in your own scripts or scripting engine.
+```
+## recurse.ps1; example of how you can call iex.run-hosted scripts from other scripts.
+## in your scripting engine call 'curl.exe iex.run/recurse | iex' to also run alphabet.cmd and paramtest.cmd in order.
+$Env:testvar = "Hello World"
+iex.run alphabet
+iex.run paramtest?1
+iex.run passvar
+```
 ### 4. Providing Magic URLs to others via email, teams or other message services.
+https://iex.run/alphabet
+
 ### 5. Optional: 'Uninstall' iex.run from the endpoint when you are done. (Deletes all previously downloaded files including the stub script launcher)
+`` iex.run @uninstall``
+
+# Additional Features:
 
 ## Arbitrary arguments are supported by using '?' as a delimiter.
 iex.run will replace all '?' with spaces when the command is launched. All forward-slashes '/' past the first quesiton mark are preserved and passed as an argument.
@@ -58,11 +84,36 @@ iex.run will replace all '?' with spaces when the command is launched. All forwa
 > is the same as:  
 ``alphabet.cmd 23-30 35-50``
 
+## For providing magicURLs, powerhsell built-in commands are supported, and 'poison characters' can be url-encoded in the command OR paraemeters as needed.
+``ipconfig /all``  
+can be run with:  
+https://iex.run/ipconfig?/all  
+  
+``Get-NetIPConfiguration | select "InterfaceAlias","InterfaceDescription" | out-gridview; pause``   
+enocdes to:   
+https://iex.run/Get-NetIPConfiguration%20%7C%20select%20%22InterfaceAlias%22%2C%22InterfaceDescription%22%20%7C%20out-gridview%3Bpause
+  
 ## 'Metaparameters' can modify the default behaviors of iex.run on an as-needed basis.  
 Use '@' signs to specify metaparemeters which will not be passed to the command, but rather will toggle the default settings by the same name in the config.html.
 
 ``curl.exe iex.run/alphabet?23-30?35-50?@Debugvars | iex``  
-> (For a full list of metaparameters reference the comments in the middle of iex.ps1)
+`` ``  
+### Metaparmeters:
+```
+NoStub                 # Do not download stub script  
+NoWildcard             # Do not match command on wildcard  
+NoExecute              # Download Script only.  
+Admin                  # Run script elevetated.  
+Hidden                 # hide powershell window  
+cat                    # prints script text only, does not download or execute  
+type                   # same as cat  
+help                   # same as cat except filters to line comments starting with ##, or :: 
+                       # so you can add custom iex.run help reminders in the comments of your scripts.  
+NoClipboard            # Do not copy MagicURL to clipboard  
+DebugVars              # show all vars created  
+KeepVars               # do not delete any iex variables after script runs.  
+Uninstall              # Run uninstall script after  
+```
 
 ## Setting up your own iex.run instance is easy!
 
@@ -111,12 +162,10 @@ If you are an MSP, iex.run is not meant to be a replacement for a script engine 
   
 ## todo:
 
-- Have stub script replace spaces with quesiton marks automatically for parameters, attepmt to run local commands when run offline.
-- finish remaining planned meta-parameters
-- add metaparameter instructions to readme.
 - add 'external download' and run option via metaparemeter OR other recursive scripts
 - extra trailing spaces after domain name breaks things for some reason  
-- write sha to stub script AFS and skip download if current.
-- review / refactor cumbersome string manipulation  
+- review / refactor cumbersome string manipulation
+- Allow for multi-match downloads if @Noexecute is true
 - have iex.run respect working directory when script runs (in case script does something in the current directory and cares about this)
-- Add 'UninstallAll' parameter since iex.runs can live side-by-side (look up stubs by \*.\*.cmd, look up folders by \*.\*)
+- Add builtin 'rpau' meta-parameter?
+- Add 'UninstallAll' metaparameter since iex.runs can live side-by-side (look up stubs by \*.\*.cmd, look up folders by \*.\*)
