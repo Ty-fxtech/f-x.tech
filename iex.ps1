@@ -163,11 +163,11 @@ if ($exe) {
      write-host "" 
      if (Test-Path -Path $exe -PathType Leaf) {
       Set-Content -Path $exe -Stream sha -value $sha
-      if ($exe -like "*!*") { mv $exe ($exe.replace("!")) }
+      if ($exe -like "*!*") { mv $exe ($exe.replace("!","")) }
       } 
      }
   if (!($_NoExecute)) {
-    $exe = $exe.replace("!")
+    $exe = $exe.replace("!","")
     Write-Host "Launching '$exe' ..." -ForegroundColor Yellow 
     write-host ""
     if ($_Admin -and $_Hidden) {
@@ -191,6 +191,7 @@ if ($exe) {
 
 If (!($DownloadUrl)) {
  $shamatch = $orphans = $index = @()
+ foreach ($name in $list) {$list.name = $list.name.replace("!","")}
  $names = ($list.name + $files.name) | Select-Object -unique
  if ($names) {foreach ($name in $names) {$index += [PSCustomObject]@{Name = $name; '?' = [char]18 } } }
  $shamatch += Compare-Object -ReferenceObject $list -DifferenceObject $files -Property name,sha -ExcludeDifferent -IncludeEqual
