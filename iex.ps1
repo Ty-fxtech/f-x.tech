@@ -133,7 +133,7 @@ if ($DownloadUrl) {
   }
 }
 
-if ($exe -like "*!") {$_Admin = $true}
+if ($exe -like "*!*") {$_Admin = $true}
 
 pushd $_DownloadFolder
 
@@ -163,11 +163,11 @@ if ($exe) {
      write-host "" 
      if (Test-Path -Path $exe -PathType Leaf) {
       Set-Content -Path $exe -Stream sha -value $sha
-      if ($exe -like "*!") {mv $exe ($exe.trim("!"))
+      if ($exe -like "*!*") { mv $exe ($exe.replace("!")) }
       } 
      }
   if (!($_NoExecute)) {
-    $exe = $exe.trim("!")
+    $exe = $exe.replace("!")
     Write-Host "Launching '$exe' ..." -ForegroundColor Yellow 
     write-host ""
     if ($_Admin -and $_Hidden) {
