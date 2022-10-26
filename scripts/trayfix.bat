@@ -5,12 +5,8 @@ if '%errorlevel%' == '0' rmdir "%windir%\AdminCheck" & goto gotPrivileges else g
 
 
 :getPrivileges
-(
-echo Set UAC = CreateObject^(^"Shell.Application^"^)
-echo Set args = WScript.Arguments
-echo UAC.ShellExecute args.Item^(0^), ^"^", ^"^", ^"runas^", 1) > runadmin.vbs
-runadmin.vbs "%~dp0%0"
-del runadmin.vbs
+echo "Must be ran as admin!"
+pause
 exit
 
 :gotPrivileges
