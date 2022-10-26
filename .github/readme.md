@@ -102,7 +102,8 @@ Use '@' signs to specify metaparemeters which will not be passed to the command,
 ```
 NoStub                 # Do not download stub script  
 NoWildcard             # Do not match command on wildcard  
-NoExecute              # Download Script only.  
+NoExecute              # Download Script only. 
+NewWindow              # opens script in a new window
 Admin                  # Run script elevetated.  
 Hidden                 # hide powershell window  
 cat                    # prints script text only, does not download or execute  
@@ -113,13 +114,18 @@ NoClipboard            # Do not copy MagicURL to clipboard
 DebugVars              # show all vars created  
 KeepVars               # do not delete any iex variables after script runs.  
 Uninstall              # Run uninstall script after  
+UninstallAll           # Run uninstall script after on all
 ```
 
 ## Setting up your own iex.run instance is easy!
 
-1. Optional, but Recommended: Purchase a short, pithy, vanity domain name like 'iex.run'. Get a .run ending if you wanna be cool like me. (3 letter names are about as short as you can go w/o paying ridiculous pricing, ie: 'foo.run')  
+1. Optional, but Recommended: Purchase a short, pithy, vanity domain name like 'iex.run'.
+ - Make sure it is unique for a github repo name. Search like the following to check:
+ > "foo.bar" in:name fork:true
+ - Get a .run ending if you wanna be cool like me.
+ - 3 letter names are about as short as you can go w/o paying ridiculous pricing ie: 'foo.run'  
 2. Fork this repository and name it accordingly:
- - If you purchased a vanity domain, name the forked repo the same as the apex vanity name.
+ - If you purchased a vanity domain, name the forked repo exactly the same as the apex vanity name.
  - OTHERWISE, name the forked repo '<your-github-username>.github.io' ie: 'xgumby.github.io'
 3. Set up the forked repo as a Github Page, deploy from a branch, main / root
 4. Optional: Verify your vanity domain with Github, then configure within Github pages, then disable 'enforce HTTPS'.
@@ -157,8 +163,7 @@ If you are an MSP, iex.run is not meant to be a replacement for a script engine 
 - stub helper script can only be used programatically inside .ps1 files and not batch files  
 - HTTPS is enforced on non-vanity domains, so https:// or -L must be supplied to those curl invocations
 - cmd invocations seems to block user input (due to how far down the matrix it goes)  
-   >Workaround: Use powershell invocation instead for user input scripts  
-- cmd.exe invocations give an final error as the original pipe is interupted "curl: (23) Failure writing output to destination"
+   >Workaround: Use powershell invocation instead for user input scripts, or @NewWindow meta-parameter
   
 ## todo:
 
@@ -168,4 +173,3 @@ If you are an MSP, iex.run is not meant to be a replacement for a script engine 
 - Allow for multi-match downloads if @Noexecute is true
 - have iex.run respect working directory when script runs (in case script does something in the current directory and cares about this)
 - Add builtin 'rpau' meta-parameter?
-- Add 'UninstallAll' metaparameter since iex.runs can live side-by-side (look up stubs by \*.\*.cmd, look up folders by \*.\*)

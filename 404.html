@@ -2,7 +2,7 @@
 ############## Top line is a CMD hook that passes the command off to powershell; i should do it all in powershell but for some reason that constructions intterupts the og curl piping and idk why, but i like that ########################################
 ############## Powershell stuff goes below here #########################
 # 
-# NOTE: To avoid outtputting "CANNOT BIND COMMAND" errors, don't leave any newlines anywhere without a PS comments (#).
+# NOTE: To avoid outtputting "Cannot bind argument to parameter 'Command' " errors, don't leave any newlines anywhere here without a PS comments (#).
 #
 ### Get all Existing Variables
 #
@@ -15,11 +15,11 @@ $invoc = $invoc.MyCommand.ToString()
 $invoc = $invoc.split("`"")                               # Remove double quotes so you can include semicolons and such in the URL
 $invoc = [string]::join("",($invoc.Split("`n")))          # ^
 $invoc = $invoc -ireplace [regex]::Escape(" | iex"), ""   # Remove ' | iex', case insensitive
+$invoc = $invoc.trim(" ")                                 # Removes all leading or traililng spaces from typos.
 $curl = $invoc.SubString(0, $invoc.LastIndexOf(' '))      # Assuming the URL will be the last thing after the last space, as the URL can't contain a space : )
 $invoc = $invoc.Replace($curl + " ","")                   # removes the curl.exe and it's parameters
 $invoc = $invoc -ireplace [regex]::Escape("http://"), ""  # gets rid of https:// if exists, case insensitive
 $invoc = $invoc -ireplace [regex]::Escape("https://"), "" # gets rid of http:// if exists, case insensitive
-# $invoc = $invoc.Replace('%20',"?")                        # Pre-decode URL-encoded spaces as ? to cheat around URI character limits
 $invocuri = [uri]("https://" + $invoc)                    # Adds back in https:// and casts to uri so we can manipulate out the queries (?) easily
 $github = $invocuri.host                                  # get the main part
 #
