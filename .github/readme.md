@@ -117,6 +117,14 @@ Uninstall              # Run uninstall script after
 UninstallAll           # Run uninstall script after on all
 ```
 
+### Metaparmeter per-file defaults via characters:
+By adding special characters to your script filenames, iex.run will automatically apply certain metaparameters to those scripts every time they are ran.
+
+For example, adding an '!' to a script name will cause iex.run to run that script as admin everytime without needing to apply the full metaparemeter.
+
+Be aware these specialt characters are stripped from the filename after they are downloaded, in case you want to run the script locally after downloading it.
+
+
 ## Setting up your own iex.run instance is easy!
 
 1. Optional, but Recommended: Purchase a short, pithy, vanity domain name like 'iex.run'.
