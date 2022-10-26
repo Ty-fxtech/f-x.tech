@@ -133,7 +133,7 @@ if ($DownloadUrl) {
   }
 }
 
-if ($exe -like "*!*") {$_Admin = $true}
+if ($exe -like "*!") {$_Admin = $true}
 
 pushd $_DownloadFolder
 
@@ -161,9 +161,13 @@ if ($exe) {
      Write-Host "Downloading '$exe' to '$_DownloadFolder'" -ForegroundColor Yellow; write-host ""
      curl.exe -# -O $DownloadUrl
      write-host "" 
-     if (Test-Path -Path $exe -PathType Leaf) {Set-Content -Path $exe -Stream sha -value $sha} 
+     if (Test-Path -Path $exe -PathType Leaf) {
+      Set-Content -Path $exe -Stream sha -value $sha
+      if ($exe -like "*!") {mv $exe ($exe.trim("!"))
+      } 
      }
-  if (!($_NoExecute)) {   
+  if (!($_NoExecute)) {
+    $exe = $exe.trim("!")
     Write-Host "Launching '$exe' ..." -ForegroundColor Yellow 
     write-host ""
     if ($_Admin -and $_Hidden) {
