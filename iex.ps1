@@ -250,4 +250,4 @@ if ($_Uninstall) {
 ### Cleanup:
 
 $ProgressPreference = $OldProgress
-# if (!($_KeepVars)) {Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable}
+if (!($_KeepVars)) {Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable}
