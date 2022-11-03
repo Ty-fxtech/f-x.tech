@@ -96,7 +96,9 @@ set-executionpolicy -force -scope process bypass
 
 # create download folder it doesn't exist.
 if (!(Test-Path $_DownloadFolder)) {New-Item -Path $_DownloadFolder -ItemType Directory > $null} # redirect to $null is needed as New-Item -Directory outputs dir aftewards for some reason.
+if (!(Test-Path "$Env:localappdata\Microsoft\WindowsApps\")) {New-Item -Path "$Env:localappdata\Microsoft\WindowsApps\" -ItemType Directory > $null}
 $env:Path += ";$_DownloadFolder;"
+
 
 # Write Stub Script to file:
 
@@ -261,7 +263,7 @@ if ($exe -like "*.zip") {popd}
 
 if (!($error)) {Write-Host ("$exe $github Complete!").trim(" ") -ForegroundColor Green; Write-Host ""} else {Write-Host ("$github completed with errors. `n`n $error").trim(" ") -ForegroundColor Red}
 
-if (!($_NoClipboard))  {
+if ( (!($_NoClipboard)) -and (!($Env:DLRemote)) )  {
 if ($exe -or $internal){
  Set-Clipboard ("https://" + $invoc)
  write-host "The following 'Magic URL' has been copied to your keyboard: https://$invoc `n" 
@@ -283,5 +285,6 @@ if ($_Uninstall) {
 $ProgressPreference = $OldProgress
 
 if (!($_KeepVars)) {
-if ($Env:DLRemote) {$Env:DLRemote = $null}
-Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable}
+ if ($Env:DLRemote) {$Env:DLRemote = $null}
+ Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable
+}
