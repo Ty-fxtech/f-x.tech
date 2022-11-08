@@ -28,13 +28,13 @@ https://iex.run/3kbrl
 #### Syntax Chart
 powershell:
 ```
-curl.exe iex.run/command?param1?param2?@Metaparam1@Metaparam2 | iex
-curl.exe -L xgumby.github.io/command?param1?param2?@Metaparam1@Metaparam2 | iex
+curl.exe iex.run/partialscriptname?param1?param2?@Metaparam1?@Metaparam2 | iex
+curl.exe -L xgumby.github.io/partialscriptname?param1?param2?@Metaparam1?@Metaparam2 | iex
 ```
 cmd:
 ```
-curl iex.run/command?parameter1?parameter2?@Metaparameter1@Metaparameter1 | cmd
-curl -L xgumby.github.io/command?parameter1?parameter2?@Metaparameter1@Metaparameter1 | cmd
+curl iex.run/partialscriptname?parameter1?parameter2?@Metaparameter1?@Metaparameter1 | cmd
+curl -L xgumby.github.io/partialscriptname?parameter1?parameter2?@Metaparameter1?@Metaparameter1 | cmd
 ```
 >Note that the middle portion of the command is identical to it's magic URL, we suggest prepending https:// so most things will automtaically convert it to a hyperlink.
 #### Examples 
