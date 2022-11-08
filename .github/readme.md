@@ -38,7 +38,31 @@ curl -L xgumby.github.io/partialscriptname?parameter1?parameter2?@Metaparameter1
 ```
 >Note that the middle portion of the command is identical to it's magic URL, we suggest prepending https:// so most things will automtaically convert it to a hyperlink.  
 
-## Examples:
+### **Examples:**
+  
+#### Omit the scriptname to display the index:  
+  
+**Vanity Domain Basic Invocation:**  
+powershell:  
+``curl.exe iex.run | iex``
+  
+cmd.exe:  
+``curl iex.run | cmd ``  
+
+  
+**Non-Vanity Domain Basic Invocation: ('https://' or -L mandatory)**  
+powershell syntax:  
+``curl.exe -L xgumby.github.io | iex ``  
+or  
+``curl.exe https://xgumby.github.io | iex ``  
+   
+cmd.exe syntax:  
+``curl -L xgumby.github.io | cmd ``  
+or  
+``curl https://xgumby.github.io | iex``
+  
+#### Run a script: (ie alphabet.bat)
+  
 **Vanity Domain Basic Invocation:**  
 powershell:  
 ``curl.exe iex.run/alphabet | iex``
