@@ -104,6 +104,7 @@ Use '@' signs to specify metaparemeters which will not be passed to the command,
 `` ``  
 ### Metaparmeters:
 ```
+HideBanner             # Do not display banner.html from the CLI
 NoStub                 # Do not download stub script  
 NoWildcard             # Do not match command on wildcard  
 NoExecute              # Download Script only. 
