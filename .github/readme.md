@@ -36,8 +36,9 @@ cmd:
 curl iex.run/partialscriptname?parameter1?parameter2?@Metaparameter1?@Metaparameter1 | cmd
 curl -L xgumby.github.io/partialscriptname?parameter1?parameter2?@Metaparameter1?@Metaparameter1 | cmd
 ```
->Note that the middle portion of the command is identical to it's magic URL, we suggest prepending https:// so most things will automtaically convert it to a hyperlink.
-#### Examples 
+>Note that the middle portion of the command is identical to it's magic URL, we suggest prepending https:// so most things will automtaically convert it to a hyperlink.  
+
+## Examples:
 **Vanity Domain Basic Invocation:**  
 powershell:  
 ``curl.exe iex.run/alphabet | iex``
