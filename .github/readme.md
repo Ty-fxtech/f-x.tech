@@ -28,16 +28,41 @@ https://iex.run/3kbrl
 #### Syntax Chart
 powershell:
 ```
-curl.exe iex.run/command?param1?param2?@Metaparam1@Metaparam2 | iex
-curl.exe -L xgumby.github.io/command?param1?param2?@Metaparam1@Metaparam2 | iex
+curl.exe iex.run/partialscriptname?param1?param2?@Metaparam1?@Metaparam2 | iex
+curl.exe -L xgumby.github.io/partialscriptname?param1?param2?@Metaparam1?@Metaparam2 | iex
 ```
 cmd:
 ```
-curl iex.run/command?parameter1?parameter2?@Metaparameter1@Metaparameter1 | cmd
-curl -L xgumby.github.io/command?parameter1?parameter2?@Metaparameter1@Metaparameter1 | cmd
+curl iex.run/partialscriptname?parameter1?parameter2?@Metaparameter1?@Metaparameter1 | cmd
+curl -L xgumby.github.io/partialscriptname?parameter1?parameter2?@Metaparameter1?@Metaparameter1 | cmd
 ```
->Note that the middle portion of the command is identical to it's magic URL, we suggest prepending https:// so most things will automtaically convert it to a hyperlink.
-#### Examples 
+>Note that the middle portion of the command is identical to it's magic URL, we suggest prepending https:// so most things will automtaically convert it to a hyperlink.  
+
+### Examples:
+  
+#### Omit the scriptname to display the index:  
+  
+**Vanity Domain Basic Invocation:**  
+powershell:  
+``curl.exe iex.run | iex``
+  
+cmd.exe:  
+``curl iex.run | cmd ``  
+
+  
+**Non-Vanity Domain Basic Invocation: ('https://' or -L mandatory)**  
+powershell syntax:  
+``curl.exe -L xgumby.github.io | iex ``  
+or  
+``curl.exe https://xgumby.github.io | iex ``  
+   
+cmd.exe syntax:  
+``curl -L xgumby.github.io | cmd ``  
+or  
+``curl https://xgumby.github.io | iex``
+  
+#### Run a script: (ie alphabet.bat)
+  
 **Vanity Domain Basic Invocation:**  
 powershell:  
 ``curl.exe iex.run/alphabet | iex``
@@ -76,6 +101,13 @@ https://iex.run/alphabet
 
 # Additional Features:
 
+## built-in commands are supported, and 'poison characters' can be url-encoded in the command OR paraemeters as needed. This allows you to
+## provide magic URLs for built-in commands.  
+  
+``ipconfig /all``  
+can be run with:  
+https://iex.run/ipconfig?/all  
+
 ## Arbitrary arguments are supported by using '?' as a delimiter.
 iex.run will replace all '?' with spaces when the command is launched. All forward-slashes '/' past the first quesiton mark are preserved and passed as an argument.
   
@@ -84,10 +116,7 @@ iex.run will replace all '?' with spaces when the command is launched. All forwa
 > is the same as:  
 ``alphabet.cmd 23-30 35-50``
 
-## For providing magicURLs, powerhsell built-in commands are supported, and 'poison characters' can be url-encoded in the command OR paraemeters as needed.
-``ipconfig /all``  
-can be run with:  
-https://iex.run/ipconfig?/all  
+
   
 ``Get-NetIPConfiguration | select "InterfaceAlias","InterfaceDescription" | out-gridview; pause``   
 enocdes to:   
@@ -100,6 +129,7 @@ Use '@' signs to specify metaparemeters which will not be passed to the command,
 `` ``  
 ### Metaparmeters:
 ```
+HideBanner             # Do not display banner.html from the CLI
 NoStub                 # Do not download stub script  
 NoWildcard             # Do not match command on wildcard  
 NoExecute              # Download Script only. 
@@ -109,7 +139,8 @@ Hidden                 # hide powershell window
 cat                    # prints script text only, does not download or execute  
 type                   # same as cat  
 help                   # same as cat except filters to line comments starting with ##, or :: 
-                       # so you can add custom iex.run help reminders in the comments of your scripts.  
+                       # so you can add custom iex.run help reminders in the comments of your scripts.
+DLRemote               # Download remote file as specified via URL-encoded main command OR recursive script pre-set variable $DLRemote
 NoClipboard            # Do not copy MagicURL to clipboard  
 DebugVars              # show all vars created  
 KeepVars               # do not delete any iex variables after script runs.  
@@ -117,30 +148,29 @@ Uninstall              # Run uninstall script after
 UninstallAll           # Run uninstall script after on all
 ```
 
-### Metaparmeter per-file defaults via characters:
-By adding special characters to your script filenames, iex.run will automatically apply certain metaparameters to those scripts every time they are ran.
+## 'Remote Download' feature support via enviromental variable or meta-parameter:
 
-For example, adding an '!' to a script name will cause iex.run to run that script as admin everytime without needing to apply the full metaparemeter.
+This will tell iex.run to install Opera by using ninte:
 
-Be aware these specialt characters are stripped from the filename after they are downloaded, in case you want to run the script locally after downloading it.
+``curl.exe iex.run/https%3A%2F%2Fninite.com%2Fopera%2Fninite.exe?@DLRemote | iex``
 
-
-## Setting up your own iex.run instance is easy!
+# Setting up your own iex.run instance is easy!
 
 1. Optional, but Recommended: Purchase a short, pithy, vanity domain name like 'iex.run'.
  - Make sure it is unique for a github repo name. Search like the following to check:
- > "foo.bar" in:name fork:true
- - Get a .run ending if you wanna be cool like me.
- - 3 letter names are about as short as you can go w/o paying ridiculous pricing ie: 'foo.run'  
+ > "foo.run" in:name fork:true
+  (Get a .run ending if you wanna be cool like me.)
+  (3 letter names are about as short as you can go w/o paying ridiculous pricing ie: 'foo.run')  
 2. Fork this repository and name it accordingly:
- - If you purchased a vanity domain, name the forked repo exactly the same as the apex vanity name.
+ - If you purchased a vanity domain, name the forked repo exactly the same as the apex vanity name. 'foo.run'
  - OTHERWISE, name the forked repo '<your-github-username>.github.io' ie: 'xgumby.github.io'
 3. Set up the forked repo as a Github Page, deploy from a branch, main / root
 4. Optional: Verify your vanity domain with Github, then configure within Github pages, then disable 'enforce HTTPS'.
 5. Optional: Set Custom iex.run default runtime options and/or webpage banner within /customization folder.
-6. Optional: If using a non-vanity github.io domain, delete the CNAME file. 
-7. Upload powershell scripts, batch files, or small binaries to the /scripts folder
-8. Launch those scripts uploaded in step 5 from most any Windows endpoint using the interactive console syntax, the stub script launcher, or Magic URLs as explained above.
+6. Optional: If using a non-vanity github.io domain, delete the CNAME file.
+7. Optional: IF you want to repurpose any of the existing example scripts, please replace iex.run with your own domain name. 
+8. Upload powershell scripts, batch files, or small binaries to the /scripts folder
+9. Launch those scripts uploaded in step 5 from most any Windows endpoint using the interactive console syntax, the stub script launcher, or Magic URLs as explained above.
 
 ## FAQ
 
@@ -172,12 +202,18 @@ If you are an MSP, iex.run is not meant to be a replacement for a script engine 
 - HTTPS is enforced on non-vanity domains, so https:// or -L must be supplied to those curl invocations
 - cmd invocations seems to block user input (due to how far down the matrix it goes)  
    >Workaround: Use powershell invocation instead for user input scripts, or @NewWindow meta-parameter
-  
-## todo:
 
-- add 'external download' and run option via metaparemeter OR other recursive scripts
-- extra trailing spaces after domain name breaks things for some reason  
+At this point iex.run does basically everything I would want it to, there are a few other improvements I can think of but I may not get to these for awhile:
+
+## todo:  
+only write alternate-file stream info if file succesfully downloads (if (download command) {write sha}
+  
+## possible todo:
+
 - review / refactor cumbersome string manipulation
 - Allow for multi-match downloads if @Noexecute is true
-- have iex.run respect working directory when script runs (in case script does something in the current directory and cares about this)
-- Add builtin 'rpau' meta-parameter?
+- have iex.run respect working directory when script runs? (in case script does something in the current directory and cares about this)
+- Add builtin 'rpau' meta-parameter? (either by piggy-backing off RPAU.exe or figuring out how to do this myself natively in powershell.)
+- Add admin/global install and uninstall options / Add built-in support for programatically adding public/iex.run to %PATH% permanently. 
+
+[Buy me a coffee!](https://www.paypal.com/donate/?hosted_button_id=RCQNK9RFDYQEG)

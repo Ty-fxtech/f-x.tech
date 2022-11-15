@@ -7,10 +7,13 @@ Add-Type -AssemblyName System.Web
 # Get OldProgress: 
 $OldProgress = $ProgressPreference; $ProgressPreference = "SilentlyContinue"
 
+#Display Banner
+if (!($_HideBanner)) {(((iwr "$github/customizations/banner.html").parsedhtml).body).innertext}
+
 # Set Default Download Folder Default location (Will be overwritten later if config exists)
 $_DownloadFolder = '$Env:Public\$github\' # Default '$Env:Public\$github\'
 
-# Get full github URLs
+# Get this repo's full github URLs using api search based on github pages url
 $search = irm  https://api.github.com/search/repositories?q=%22$github%22%20in%3Aname%20fork%3Atrue
 $githubURL = ($search.items | where {$_.name -like "$github"} | Select -First 1).html_url
 $command = ($invocuri.Absolutepath).Trim("/")
@@ -19,7 +22,7 @@ $arguments = [System.Web.HttpUtility]::UrlDecode($arguments)
 $command = [System.Web.HttpUtility]::UrlDecode($command)
 $arguments = $arguments.Split("?")
 
-# Make API calls and format.
+# Make github API calls and format.
 $rootapiurl ="https://api.github.com/repos" + ([uri]$githubURL).AbsolutePath + "/contents"
 $apiurl = $rootapiurl + "/scripts"
 $configapiurl = $rootapiurl + "/customizations"
@@ -53,6 +56,7 @@ $ConfigUrl = ($configapi | Where-Object {$_.name -like "*config.html*"}).downloa
 $customconfig = ((curl -UseBasicParsing $ConfigURL).content).split("`n")
 # -useBasicParsing is deprecated but can allow for additional compatability on versions of powershell.
 
+#match on only lines with = signs
 $customconfig = $customconfig | Where {$_ -like "*=*" }  
 
 #Process $Customconfig variables from config.html
@@ -72,6 +76,7 @@ foreach ($item in $customconfig) {
  }
 
 #Process any Meta-paramenters (Prepend Underscore, Remove @, toggle if the variable exists or else create a new variable.)
+$newargs = @()
 foreach ($item in $arguments) {
   if ($item -like '`@*') {
     $trimitem = "_" + $item.trim('@') 
@@ -81,19 +86,22 @@ foreach ($item in $arguments) {
       else {
         Set-Variable -Name $trimitem -Value $true
        } 
-      } 
-     } 
+    } else {$newargs = $newargs + $item }
+  } 
+$arguments = $newargs
 
-
-# Expand DownloadFolder
+# Expand DownloadFolder variable
 $_DownloadFolder = $ExecutionContext.InvokeCommand.ExpandString($_DownloadFolder)
 
-### Execute:
 
+# change execution policy to allow running ps1
 set-executionpolicy -force -scope process bypass
 
+# create download folder it doesn't exist.
 if (!(Test-Path $_DownloadFolder)) {New-Item -Path $_DownloadFolder -ItemType Directory > $null} # redirect to $null is needed as New-Item -Directory outputs dir aftewards for some reason.
+if (!(Test-Path "$Env:localappdata\Microsoft\WindowsApps\")) {New-Item -Path "$Env:localappdata\Microsoft\WindowsApps\" -ItemType Directory > $null}
 $env:Path += ";$_DownloadFolder;"
+
 
 # Write Stub Script to file:
 
@@ -110,6 +118,8 @@ $stub | out-file $Env:localappdata\Microsoft\WindowsApps\$github.cmd -encoding a
 
 write-host ""
 
+### parse required info from github API results and check for multiple matches
+
 if ($command) {
  if (!($_NoWildcard)) {
   $DownloadUrl = ($api | Where-Object {$_.name -like "*$command*"}).download_url
@@ -122,9 +132,17 @@ if ($command) {
   }
 }
 
+if ($_DLRemote) {$DownloadURL = $command}
+if ($Env:DLRemote) {$DownloadURL = $Env:DLRemote}
+if ($_DLRemote -or $Env:DLRemote) {
+ $DLsize = curl.exe -sI $DownloadURL | findstr "Content-Length:" 
+ $sha = $DLSize + $DownloadURL 
+ }
+
 if ($DownloadUrl) {
   if ($DownloadUrl.gettype().Name -eq "String") {
-    $exe = $DownloadUrl.substring($DownloadUrl.LastIndexOf('/') + 1, $DownloadUrl.length - $DownloadUrl.LastIndexOf('/') - 1 ) 
+    $exe = $DownloadUrl.substring($DownloadUrl.LastIndexOf('/') + 1, $DownloadUrl.length - $DownloadUrl.LastIndexOf('/') - 1 )
+    if ($exe -like "*``?*") {$exe = $exe.substring(0, $exe.indexof("?"))}
   }
   else {
    Write-host "Multiple matches found! Cancelling execution. Please use a more specfic search and try again: `n" -ForegroundColor Red
@@ -137,14 +155,15 @@ if ($exe -like "*!*") {$_Admin = $true}
 
 pushd $_DownloadFolder
 
-# Take inventory of previously downloaded files and their original github SHA
-$files = @(Get-ChildItem *) 
+# Take inventory of previously downloaded files and their original github SHA written to their alternate data stream
+$files = @(Get-ChildItem * -file) 
 $files | Add-Member -MemberType NoteProperty -Name 'sha' -value '' 
-foreach ($file in $files) {$file.sha = Get-Content -Path $file.name -Stream sha -ErrorAction SilentlyContinue}
+foreach ($file in $files) {$file.sha = Get-Content -Path $file.name -Stream sha -ErrorAction Ignore}
 
-# Download and Run Files
+### Main operation if a command was provided
 
 if ($exe) {
+  # Display contents or Download the file
   if ($_cat -or $_type) {
    write-host "$exe `n"  -foregroundcolor white
    curl.exe -s $DownloadUrl | write-host -foregroundcolor white
@@ -155,17 +174,31 @@ if ($exe) {
    curl.exe -s $DownloadUrl | select-string -pattern "^::" | write-host -foregroundcolor white 
    write-host ""
   } else {
-   if ($sha -in $files.sha) {
+   if ($sha -and $sha -in $files.sha) {
      Write-Host "Downloaded '$exe' up-to-date, skipping download." -ForegroundColor Yellow; write-host "" 
    } else {
      Write-Host "Downloading '$exe' to '$_DownloadFolder'" -ForegroundColor Yellow; write-host ""
-     curl.exe -# -O $DownloadUrl
+     curl.exe -# -o $exe $DownloadUrl
      write-host "" 
      if (Test-Path -Path $exe -PathType Leaf) {
       Set-Content -Path $exe -Stream sha -value $sha
       if ($exe -like "*!*") { mv $exe ($exe.replace("!","")) }
       } 
      }
+     
+  # Expand Zip if Zip and find new $exe
+  if ($exe -like "*.zip") {
+   expand-archive $exe -erroraction ignore
+   $noext = (Get-Item $exe).BaseName
+   Set-Content -Path $noext -Stream sha -value $sha
+   del $exe
+   pushd $noext
+   try {$tempexe = ((dir).Name | Select-String  "$noext.*\.(exe|ps1|cmd|bat)" | select -first 1).tostring()}
+   catch {$tempexe = ((dir).Name | Select-String  "\.(exe|ps1|cmd|bat)" | select -first 1).tostring()}
+   finally {$exe = "$_DownloadFolder$noext\$tempexe"}
+   }
+   
+  # Execute the file 
   if (!($_NoExecute)) {
     $exe = $exe.replace("!","")
     Write-Host "Launching '$exe' ..." -ForegroundColor Yellow 
@@ -187,7 +220,7 @@ if ($exe) {
  }
 }
 
-# If no command build and display index
+### If no command build and display index
 
 If (!($DownloadUrl)) {
  $shamatch = $orphans = $index = @()
@@ -199,6 +232,7 @@ If (!($DownloadUrl)) {
  foreach ($thing in $shamatch) {$thing.SideIndicator = $thing.SideIndicator -replace("==",[char]25) } 
  foreach ($thing in $orphans) {$thing.SideIndicator = $thing.SideIndicator -replace("<="," ") -replace("=>",[char]19) } 
  $full = $shamatch + $orphans
+ foreach ($thing in $files) {if ($thing.sha -like "*Content-Length:*") {($full | Where-Object {$_.Name -like $thing.name}).SideIndicator = "R"} }
  foreach ($item in $full) {($index | Where-Object {$_.Name -like $item.name})."?" = $item.SideIndicator} 
  IF ($command) {
   Write-Host "No scripts matching '$command' found in $github, trying a built-in command`n" -ForegroundColor Yellow
@@ -227,10 +261,13 @@ If (!($DownloadUrl)) {
  }
 
 popd
+if ($exe -like "*.zip") {popd}
+
+### Display Results:
 
 if (!($error)) {Write-Host ("$exe $github Complete!").trim(" ") -ForegroundColor Green; Write-Host ""} else {Write-Host ("$github completed with errors. `n`n $error").trim(" ") -ForegroundColor Red}
 
-if (!($_NoClipboard))  {
+if ( (!($_NoClipboard)) -and (!($Env:DLRemote)) )  {
 if ($exe -or $internal){
  Set-Clipboard ("https://" + $invoc)
  write-host "The following 'Magic URL' has been copied to your keyboard: https://$invoc `n" 
@@ -250,4 +287,8 @@ if ($_Uninstall) {
 ### Cleanup:
 
 $ProgressPreference = $OldProgress
-if (!($_KeepVars)) {Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable}
+
+if (!($_KeepVars)) {
+ if ($Env:DLRemote) {$Env:DLRemote = $null}
+ Get-Variable | Where-Object Name -notin $existingVariables.Name | Remove-Variable
+}
