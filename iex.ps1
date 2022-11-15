@@ -108,12 +108,19 @@ $env:Path += ";$_DownloadFolder;"
 if (!($_NoStub)) {
 $stub = @"
 @ECHO OFF
-set "PATH=%PATH%;$_DownloadFolder;"
-if [%~1] NEQ [] SET "PARAM=%*"  
+set "PATH=%PATH%;C:\Users\Public\$github\;"
+if [%~1] NEQ [] (SET "PARAM=%*") ELSE FOR /F "USEBACKQ" %%A IN (``ECHO %CMDCMDLINE% ^| findstr /i /v WindowsApps ^| findstr /i %~n0``) do (set "pipe=1")
+if defined pipe set /p "p="
+if defined p call %p%
 IF DEFINED PARAM SET "PARAM=%PARAM: =?%" 
-powershell -c "curl.exe -L $github/%PARAM% | iex" || powershell -c "& %PARAM%" > NUL || (ECHO You seem to be offline, see previously downloaded %~n0 files below: & ECHO. & dir /b "$_DownloadFolder")
+powershell -c "curl.exe -L $github/%PARAM% | iex" || powershell -c "& %PARAM%" > NUL || (ECHO You seem to be offline, see previously downloaded $github files below: & ECHO. & dir /b "C:\Users\Public\$github")
 "@ 
-$stub | out-file $Env:localappdata\Microsoft\WindowsApps\$github.cmd -encoding ascii
+foreach ($item in @("$Env:localappdata\Microsoft\WindowsApps\$github.cmd","$Env:localappdata\Microsoft\WindowsApps\iex.cmd")) {
+   $dlstub = Get-Content -erroraction ignore -raw $item
+   if ($dlstub) {$dlstub = $dlstub.trim("`n`r")}
+   if ($stub -ne $dlstub) {$stub | out-file $item -encoding ascii}
+   $dlstub = $null
+   }
 }
 
 write-host ""
@@ -203,7 +210,15 @@ if ($exe) {
     $exe = $exe.replace("!","")
     Write-Host "Launching '$exe' ..." -ForegroundColor Yellow 
     write-host ""
-    if ($_Admin -and $_Hidden) {
+    
+    # If run as non-interactive system user, run as logged in user instead. Otherwise run in normal user context according to provided meta-parameneters
+    if ( ((whoami) -like "nt authority\system") -and (([Environment]::UserInteractive) -eq $false) )  {
+     if (!(Get-Module -ListAvailable -Name "RunAsUser")) {Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force; Install-Module -Force -Name RunAsUser}
+     Write-Host "Detected non-interactive system user, launching '$exe' as current logged-in user instead." -ForegroundColor Yellow 
+     import-module RunAsUser
+     $scriptblock = [scriptblock]::Create("cmd /c $github.cmd $exe $arguments")
+     invoke-ascurrentuser -noWait -scriptblock $scriptblock 
+    } elseif ($_Admin -and $_Hidden) {
      start-process -verb RunAs -wait powershell -ArgumentList "-WindowStyle Hidden -executionpolicy Bypass -command `"& $_DownloadFolder$exe $arguments`" "
     } elseif ($_Admin) {
      start-process -verb RunAs -wait powershell -ArgumentList "-executionpolicy Bypass -command `"& $_DownloadFolder$exe $arguments`" "
