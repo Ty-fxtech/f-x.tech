@@ -10,7 +10,7 @@ $OldProgress = $ProgressPreference; $ProgressPreference = "SilentlyContinue"
 #Display Banner
 if (!(Get-ItemProperty -erroraction ignore -Path "HKCU:\Software\Microsoft\Internet Explorer\Main" -Name "DisableFirstRunCustomize")) {
  Set-ItemProperty -Path "HKCU:\Software\Microsoft\Internet Explorer\Main" -Name "DisableFirstRunCustomize" -Value 2}
-if (!($_HideBanner)) {(((iwr "$github/customizations/banner.html").parsedhtml).body).innertext}
+if (!($_HideBanner)) {(((iwr -erroraction ignore "$github/customizations/banner.html").parsedhtml).body).innertext}
 
 # Set Default Download Folder Default location (Will be overwritten later if config exists)
 $_DownloadFolder = '$Env:Public\$github\' # Default '$Env:Public\$github\'
@@ -215,7 +215,7 @@ if ($exe) {
     
     # If run as non-interactive system user, run as logged in user instead. Otherwise run in normal user context according to provided meta-parameneters
     if ( ((whoami) -like "nt authority\system") -and (([Environment]::UserInteractive) -eq $false) )  {
-     if (!(Get-Module -ListAvailable -Name "RunAsUser")) {Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force; Install-Module -Force -Name RunAsUser}
+     if (!(Get-Module -ListAvailable -Name "RunAsUser")) {Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force > $null; Install-Module -Force -Name RunAsUser}
      Write-Host "Detected non-interactive system user, launching '$exe' as current logged-in user instead. `n" 
      import-module RunAsUser
      $tempargument = "'" + "curl.exe $github/$exe | iex" + "'"
