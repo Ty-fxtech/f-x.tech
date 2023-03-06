@@ -1,1 +1,0 @@
-Add-VpnConnection -Name $args[0] -ServerAddress $args[1] -TunnelType "SSTP" -AuthenticationMethod "PAP" -EncryptionLevel "Optional" -RememberCredential  -SplitTunneling -AllUserConnection
